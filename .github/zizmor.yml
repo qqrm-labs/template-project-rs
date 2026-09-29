@@ -1,6 +1,0 @@
-rules:
-  dangerous-triggers:
-    # The only allowed privileged trigger is the Dependabot-only workflow above.
-    ignore:
-      - dependabot-automerge.yml
-
