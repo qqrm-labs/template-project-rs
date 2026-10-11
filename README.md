@@ -20,29 +20,27 @@ Dependabot collects Cargo and GitHub Actions updates into one `maintenance` PR
 on Mondays at 12:00 Europe/Moscow. Ordinary releases have a seven-day cooldown.
 Security updates are grouped separately for Cargo and do not wait for the weekly
 version-update schedule or cooldown. Dependabot fixes dependencies, not arbitrary
-code or CI findings; those still need a reviewed maintenance PR.
+code or CI findings; those still need a separate maintenance PR passing CI.
 
 Native auto-merge is enabled when the current Dependabot commit passes both
 `ci-gate` and `workflow-security-gate`. Missing, skipped, cancelled, or failed
-checks block these gates. There is no scheduled merge sweep. Breaking updates,
-including Rust 0.x compatibility changes, incomplete metadata, and commits not
-signed by Dependabot require a maintainer's approval of the current head commit.
-Submitting or dismissing a review reruns the read-only security/policy checks.
-Changes to workflows, automation, or security policy also require CODEOWNER review.
+checks block these gates. There is no scheduled merge sweep or human approval
+requirement, including for major versions, Rust 0.x changes, and Actions updates.
+The read-only provenance check requires every commit to be signed by Dependabot
+and the batch head to match the checked event. A provenance failure blocks the
+batch; human approval cannot override it. Compatibility is established by the
+project's automated checks, so derived projects must test their actual behavior.
 The privileged merge workflow consumes only GitHub metadata, never PR code or
 artifacts; it uses the repository token without a PAT or production secrets.
 
 Repository settings are not copied with this template. For each derived repo:
 
-1. Replace `@qqrm` in `.github/CODEOWNERS` with the responsible maintainer/team.
-2. Protect `main`, including administrators: require an up-to-date PR and the
+1. Protect `main`, including administrators: require an up-to-date PR and the
    `ci-gate` and `workflow-security-gate` checks from GitHub Actions (app ID 15368).
-3. Require code-owner review, dismiss stale approvals, and resolve conversations.
-   Zero blanket approvals permits compatible dependency-only batches to merge.
-   Do not allow force pushes or deletions. The sole maintainer may bypass the
-   review requirement for their own PRs; required checks still apply to them.
-   Never grant the Actions or Dependabot bots a review bypass.
-4. Enable native auto-merge. Keep the default workflow token read-only and automatic
+2. Disable required pull request reviews, including code-owner and last-push
+   approvals. Require conversation resolution; disallow force pushes and deletions.
+   No maintainer or bot needs an exception to the required checks.
+3. Enable native auto-merge. Keep the default workflow token read-only and automatic
    PR approval disabled; only the metadata-only merge job receives write access.
 
 Releases remain tag-triggered. Merging a maintenance batch does not create a

@@ -20,8 +20,7 @@ concurrency:
 jobs:
   automerge:
     if: >-
-      (github.event.workflow_run.event == 'pull_request' ||
-       github.event.workflow_run.event == 'pull_request_review') &&
+      github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
@@ -50,6 +49,6 @@ jobs:
             echo 'The current Dependabot commit has not passed both required gates.'
             exit 0
           fi
-          # Native protection enforces checks, an up-to-date branch and CODEOWNERS.
+          # Native protection enforces checks and an up-to-date branch, without reviews.
           gh pr merge "$pr" --repo "$REPO" --auto --squash \
             --match-head-commit "$CHECKED_SHA"

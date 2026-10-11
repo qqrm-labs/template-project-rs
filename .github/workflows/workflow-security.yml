@@ -2,8 +2,6 @@ name: Workflow Security
 
 on:
   pull_request:
-  pull_request_review:
-    types: [submitted, dismissed]
   push:
     branches: [main]
   workflow_dispatch:
@@ -23,15 +21,10 @@ jobs:
           persist-credentials: false
       - name: Test dependency policy
         run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
-      - name: Read verified Dependabot metadata
-        id: metadata
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - name: Require compatible updates or maintainer approval
+      - name: Verify Dependabot commit provenance
         if: github.event.pull_request.user.login == 'dependabot[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
-          DEPENDENCIES: ${{ steps.metadata.outputs.updated-dependencies-json }}
         run: python3 .github/scripts/dependency_policy.py
 
   actionlint:
