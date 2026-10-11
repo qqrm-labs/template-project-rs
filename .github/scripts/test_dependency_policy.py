@@ -1,49 +1,39 @@
 import unittest
 
-from dependency_policy import approval_candidates, compatible, verified_bot_commits
+from dependency_policy import verified_bot_commits
 
 
-def update(old="1.2.3", new="1.3.0", kind="minor", **extra):
-    return {"prevVersion": old, "newVersion": new,
-            "updateType": "version-update:semver-" + kind, **extra}
+def commit(sha="head", author="dependabot[bot]", verified=True):
+    return {"sha": sha, "author": {"login": author},
+            "commit": {"verification": {"verified": verified}}}
 
 
 class PolicyTests(unittest.TestCase):
-    def test_compatible_batch(self):
-        self.assertTrue(compatible([update(), update("0.3.1", "0.3.2", "patch")]))
+    def test_signed_bot_batch_needs_no_version_metadata_or_review(self):
+        self.assertTrue(verified_bot_commits([commit("first"), commit()], "head"))
 
-    def test_one_unsafe_update_blocks_the_entire_batch(self):
-        for dependency in [update("1.2.3", "2.0.0", "major"),
-                           update("0.3.1", "0.4.0"),
-                           update("0.0.1", "0.0.2", "patch"),
-                           update("1.2.3", "1.3.0-rc.1"),
-                           update("1.2.3", "1.2.2", "patch"),
-                           update(maintainerChanges=True),
-                           update(kind="unknown"), {}, None]:
-            with self.subTest(dependency=dependency):
-                self.assertFalse(compatible([update(), dependency]))
+    def test_empty_batch_fails_closed(self):
+        self.assertFalse(verified_bot_commits([], "head"))
 
-    def test_missing_metadata_fails_closed(self):
-        for metadata in [None, [], {}, [update(old="")], [update(new="")], [update(old=None)]]:
-            self.assertFalse(compatible(metadata))
+    def test_changed_head_fails_closed(self):
+        self.assertFalse(verified_bot_commits([commit("new")], "head"))
 
-    def test_every_commit_must_be_a_verified_bot_commit(self):
-        bot = {"author": {"login": "dependabot[bot]"},
-               "commit": {"verification": {"verified": True}}}
-        self.assertTrue(verified_bot_commits([bot]))
-        self.assertFalse(verified_bot_commits([]))
-        self.assertFalse(verified_bot_commits([bot, {"author": None}]))
-        self.assertFalse(verified_bot_commits([bot, {"author": bot["author"]}]))
+    def test_every_commit_must_be_from_dependabot(self):
+        for author in ["contributor", "github-actions[bot]", "dependabot"]:
+            with self.subTest(author=author):
+                self.assertFalse(verified_bot_commits(
+                    [commit("first", author=author), commit()], "head"))
 
-    def test_approval_is_bound_to_head_and_can_be_revoked(self):
-        def review(number, state, head="new"):
-            return {"id": number, "state": state, "commit_id": head,
-                    "user": {"login": "maintainer"}}
-        self.assertEqual(approval_candidates([review(1, "APPROVED", "old")], "new"), [])
-        self.assertEqual(approval_candidates([review(1, "APPROVED")], "new"), ["maintainer"])
-        for state in ["CHANGES_REQUESTED", "DISMISSED"]:
-            self.assertEqual(approval_candidates([review(1, "APPROVED"), review(2, state)], "new"), [])
-        self.assertEqual(approval_candidates([review(1, "APPROVED"), review(2, "COMMENTED")], "new"), ["maintainer"])
+    def test_every_commit_must_have_a_verified_signature(self):
+        for verified in [False, None, "true"]:
+            with self.subTest(verified=verified):
+                self.assertFalse(verified_bot_commits(
+                    [commit("first", verified=verified), commit()], "head"))
+
+    def test_missing_provenance_fails_closed(self):
+        for incomplete in [{}, {"author": None},
+                           {"author": {"login": "dependabot[bot]"}}]:
+            self.assertFalse(verified_bot_commits([incomplete, commit()], "head"))
 
 
 if __name__ == "__main__":

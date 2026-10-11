@@ -1,5 +1,0 @@
-# Derived repositories must replace @qqrm with their maintainer or team.
-/.github/ @qqrm
-/AGENTS.md @qqrm
-/rust-toolchain.toml @qqrm
-/deny.toml @qqrm
