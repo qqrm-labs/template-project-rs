@@ -38,32 +38,30 @@ jobs:
       - name: Run actionlint
         uses: devops-actions/actionlint@ec02b36684b2f574f1d219ad0a43b082e46bf3e4 # v0.1.13
 
-  zizmor:
-    name: zizmor
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Run zizmor
-        uses: zizmorcore/zizmor-action@53290badfa369cb0bf7ad16342cb62c2fa47ac7b # v0.8.0
-        with:
-          advanced-security: false
-          min-severity: medium
+  security:
+    # The reusable workflow owns Gitleaks and zizmor. CodeQL is already enabled
+    # through GitHub Default setup, so verify that run instead of scanning twice.
+    uses: qqrm-labs/.github/.github/workflows/security.yml@c7d0eef142baedc553738036fe7c648b3bbb4ee9
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    with:
+      language: actions,rust
+      codeql-mode: default
 
   workflow-security-gate:
     if: always()
-    needs: [actionlint, zizmor, dependency-policy]
+    needs: [actionlint, security, dependency-policy]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all security checks to succeed
         env:
           ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
-          ZIZMOR_RESULT: ${{ needs.zizmor.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
           POLICY_RESULT: ${{ needs.dependency-policy.result }}
         run: |
           test "$ACTIONLINT_RESULT" = success
-          test "$ZIZMOR_RESULT" = success
+          test "$SECURITY_RESULT" = success
           test "$POLICY_RESULT" = success
