@@ -4,7 +4,9 @@ Template repository for general-purpose Rust projects.
 
 ## Included
 - CI workflow with fmt/check/clippy/nextest and dependency checks (`.github/workflows/ci.yml`)
-- GitHub Actions security workflow with actionlint and Zizmor (`.github/workflows/workflow-security.yml`)
+- GitHub Actions security workflow with actionlint, Zizmor, verified full-history
+  Gitleaks scanning and a check of GitHub's native CodeQL analysis
+  (`.github/workflows/workflow-security.yml`)
 - Release workflow for version tags (`.github/workflows/release.yml`)
 - Weekly cross-ecosystem dependency batches and event-driven native auto-merge
 
@@ -42,6 +44,17 @@ Repository settings are not copied with this template. For each derived repo:
    No maintainer or bot needs an exception to the required checks.
 3. Enable native auto-merge. Keep the default workflow token read-only and automatic
    PR approval disabled; only the metadata-only merge job receives write access.
+4. Enable GitHub CodeQL Default setup for `actions` and `rust`. The SHA-pinned
+   reusable security workflow verifies the native analysis for the checked commit;
+   it does not run a second CodeQL scan. A derived project with different languages
+   must update the `language` input to match its actual coverage.
+
+The local workflow retains actionlint, Dependabot provenance and the required
+`workflow-security-gate`. The reusable workflow owns Gitleaks and Zizmor, including
+their real detection controls. Missing or failed security jobs still block the gate.
+The reusable call declares `security-events: write` because its advanced CodeQL
+job requires that maximum permission at workflow validation time; in Default mode
+that job is skipped and the running scanners use read-only job permissions.
 
 Releases remain tag-triggered. Merging a maintenance batch does not create a
 version tag or publish a release. GitHub-token mutations may not trigger follow-on
