@@ -39,8 +39,9 @@ jobs:
         uses: devops-actions/actionlint@ec02b36684b2f574f1d219ad0a43b082e46bf3e4 # v0.1.13
 
   security:
-    # The reusable workflow owns Gitleaks and zizmor. CodeQL is already enabled
-    # through GitHub Default setup, so verify that run instead of scanning twice.
+    # The reusable workflow owns Gitleaks, zizmor and an explicit CodeQL analysis.
+    # Advanced setup must be enabled in repository Code Security settings;
+    # GitHub Default setup blocks uploads from advanced CodeQL.
     uses: qqrm-labs/.github/.github/workflows/security.yml@c7d0eef142baedc553738036fe7c648b3bbb4ee9
     permissions:
       contents: read
@@ -48,7 +49,7 @@ jobs:
       security-events: write
     with:
       language: actions,rust
-      codeql-mode: default
+      codeql-mode: advanced
 
   workflow-security-gate:
     if: always()
