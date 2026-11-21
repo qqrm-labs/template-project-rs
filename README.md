@@ -2,6 +2,11 @@
 
 Template repository for general-purpose Rust projects.
 
+[Agent instructions](AGENTS.md) describe how to choose and challenge behavioral
+tests, including property tests, mutation tests, and risk-specific Rust tools.
+Advanced tools are selection guidance, not preinstalled CI checks. Files copied
+from this template do not update existing derived repositories automatically.
+
 ## Included
 - CI workflow with fmt/check/clippy/nextest and dependency checks (`.github/workflows/ci.yml`)
 - GitHub Actions security workflow with actionlint, Zizmor, verified full-history
